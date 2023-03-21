@@ -4,6 +4,7 @@
 #include <linux/init.h>
 #include <linux/kdev_t.h>
 #include <linux/kernel.h>
+#include <linux/ktime.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 
@@ -23,6 +24,8 @@ static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
+static ktime_t kt;
+
 
 static long long fib_sequence(long long k)
 {
@@ -37,6 +40,51 @@ static long long fib_sequence(long long k)
     }
 
     return f[k];
+}
+
+static long long fast_doubling_rec(long long k)
+{
+    if (k < 2)
+        return k;
+    long long fk = fast_doubling_rec(k >> 1);
+    long long fk_1 = fast_doubling_rec((k >> 1) + 1);
+
+    if (k & 1)
+        return fk * fk + fk_1 * fk_1;
+    else
+        return fk * ((fk_1 << 1) - fk);
+}
+
+static long long fast_doubling_iter(long long k)
+{
+    if (k <= 2)
+        return !!k;
+    uint8_t count = 63 - __builtin_clzll(k);
+    uint64_t fib_k = 1, fib_k1 = 1;
+
+    for (uint64_t i = count, fib_2k, fib_2k1; i > 0; i--) {
+        fib_2k = fib_k * ((fib_k1 << 1) - fib_k);
+        fib_2k1 = fib_k * fib_k + fib_k1 * fib_k1;
+
+        if (k & (1 << (i - 1))) {
+            fib_k = fib_2k1;
+            fib_k1 = fib_2k + fib_2k1;
+        } else {
+            fib_k = fib_2k;
+            fib_k1 = fib_2k1;
+        }
+    }
+    return fib_k;
+}
+
+
+static long long fib_time_proxy(long long k)
+{
+    kt = ktime_get();
+    long long res = fib_sequence(k);
+    kt = ktime_sub(ktime_get(), kt);
+
+    return res;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
