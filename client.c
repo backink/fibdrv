@@ -4,16 +4,17 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "bignum.h"
 
 #define FIB_DEV "/dev/fibonacci"
 
 int main()
 {
+    char buf[100000];
     long long sz;
-
-    char buf[1];
-    char write_buf[] = "testing writing";
-    int offset = 100; /* TODO: try test something bigger than the limit */
+    int offset = 1000; /* TODO: try test something bigger than the limit */
+    // bn ret = BN_INIT;
+    // ret.number = malloc(15 * sizeof(unsigned long long));
 
     int fd = open(FIB_DEV, O_RDWR);
     if (fd < 0) {
@@ -21,29 +22,13 @@ int main()
         exit(1);
     }
 
-    for (int i = 0; i <= offset; i++) {
-        sz = write(fd, write_buf, strlen(write_buf));
-        printf("Writing to " FIB_DEV ", returned the sequence %lld\n", sz);
+    lseek(fd, offset, SEEK_SET);
+    sz = read(fd, buf, sizeof(buf));
+    if (sz == 0) {
+        printf("read from module error\n");
+        return 1;
     }
-
-    for (int i = 0; i <= offset; i++) {
-        lseek(fd, i, SEEK_SET);
-        sz = read(fd, buf, 1);
-        printf("Reading from " FIB_DEV
-               " at offset %d, returned the sequence "
-               "%lld.\n",
-               i, sz);
-    }
-
-    for (int i = offset; i >= 0; i--) {
-        lseek(fd, i, SEEK_SET);
-        sz = read(fd, buf, 1);
-        printf("Reading from " FIB_DEV
-               " at offset %d, returned the sequence "
-               "%lld.\n",
-               i, sz);
-    }
-
+    printf("%s\n", buf);
 
 
     close(fd);

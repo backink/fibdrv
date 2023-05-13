@@ -7,6 +7,9 @@
 #include <linux/ktime.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/string.h>
+#include <linux/uaccess.h>
+#include "bignum.h"
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("National Cheng Kung University, Taiwan");
@@ -18,14 +21,13 @@ MODULE_VERSION("0.1");
 /* MAX_LENGTH is set to 92 because
  * ssize_t can't fit the number > 92
  */
-#define MAX_LENGTH 92
+#define MAX_LENGTH 10000
 
 static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 static ktime_t kt;
-
 
 static long long fib_sequence(long long k)
 {
@@ -62,7 +64,7 @@ static long long fast_doubling_iter(long long k)
     uint8_t count = 63 - __builtin_clzll(k);
     uint64_t fib_k = 1, fib_k1 = 1;
 
-    for (uint64_t i = count, fib_2k, fib_2k1; i > 0; i--) {
+    for (uint64_t i = count, fib_2k, fib_2k1; i-- > 0;) {
         fib_2k = fib_k * ((fib_k1 << 1) - fib_k);
         fib_2k1 = fib_k * fib_k + fib_k1 * fib_k1;
 
@@ -77,6 +79,73 @@ static long long fast_doubling_iter(long long k)
     return fib_k;
 }
 
+void fib_bn_dp(unsigned long long target, char *buf)
+{
+    bn *a;
+    bn_init_u64(&a, 1);
+    bn *b;
+    bn_init_u64(&b, 1);
+    bn *c;
+    bn_init_u64(&c, 0);
+    if (target <= 2)
+        goto end;
+
+    for (int i = 3; i <= target; i++) {
+        bn_add(c, a, b);
+        bn_swap(a, c);
+        bn_swap(b, c);
+    }
+
+end:
+    copy_to_user(buf, c->number, c->size * 4);
+    bn_free(a);
+    bn_free(b);
+    bn_free(c);
+}
+
+
+void bn_fast_doubling(unsigned long long target, char *buf)
+{
+    char *ret;
+    bn *fib_n;
+    bn_init_u64(&fib_n, 1);
+    bn *fib_n1;
+    bn_init_u64(&fib_n1, 1);
+    bn *fib_2n;
+    bn_init_u64(&fib_2n, 0);
+    bn *fib_2n1;
+    bn_init_u64(&fib_2n1, 0);
+
+    if (target <= 2)
+        goto end;
+
+    int count = 63 - __builtin_clzll(target);
+
+    for (unsigned long long i = count; i-- > 0;) {
+        bn_lshift(fib_2n, fib_n1);
+        bn_sub(fib_2n, fib_2n, fib_n);
+        bn_mul(fib_2n, fib_2n, fib_n);
+
+        bn_mul(fib_2n1, fib_n, fib_n);
+        bn_mul(fib_n1, fib_n1, fib_n1);
+        bn_add(fib_2n1, fib_2n1, fib_n1);
+        if (target & (1UL << i)) {
+            bn_copy(fib_n, fib_2n1);
+            bn_add(fib_n1, fib_2n, fib_2n1);
+        } else {
+            bn_copy(fib_n, fib_2n);
+            bn_copy(fib_n1, fib_2n1);
+        }
+    }
+end:
+    ret = bn_to_string(fib_n);
+    copy_to_user(buf, ret, strlen(ret) + 1);
+    kfree(ret);
+    bn_free(fib_n);
+    bn_free(fib_n1);
+    bn_free(fib_2n);
+    bn_free(fib_2n1);
+}
 
 static long long fib_time_proxy(long long k)
 {
@@ -108,7 +177,8 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_sequence(*offset);
+    bn_fast_doubling(*offset, buf);
+    return 1;
 }
 
 /* write operation is skipped */
