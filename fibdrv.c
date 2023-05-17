@@ -81,6 +81,7 @@ static long long fast_doubling_iter(long long k)
 
 void fib_bn_dp(unsigned long long target, char *buf)
 {
+    char *ret;
     bn *a;
     bn_init_u64(&a, 1);
     bn *b;
@@ -97,7 +98,9 @@ void fib_bn_dp(unsigned long long target, char *buf)
     }
 
 end:
-    copy_to_user(buf, c->number, c->size * 4);
+    ret = bn_to_string(c);
+    copy_to_user(buf, ret, strlen(ret) + 1);
+    kfree(ret);
     bn_free(a);
     bn_free(b);
     bn_free(c);
@@ -177,6 +180,7 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
+    // bn_fast_doubling(*offset, buf);
     bn_fast_doubling(*offset, buf);
     return 1;
 }

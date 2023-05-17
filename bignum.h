@@ -9,12 +9,6 @@ typedef struct {
         .number = NULL, .size = 0, .capacity = 0 \
     }
 
-#define BN_INIT_ZERO                                                   \
-    {                                                                  \
-        .number = kmalloc(2 * sizeof(unsigned long long), GFP_KERNEL), \
-        .size = 1, .capacity = 2                                       \
-    }
-
 
 void bn_init(bn **num);
 

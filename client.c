@@ -12,7 +12,7 @@ int main()
 {
     char buf[100000];
     long long sz;
-    int offset = 1000; /* TODO: try test something bigger than the limit */
+    int offset = 10000; /* TODO: try test something bigger than the limit */
     // bn ret = BN_INIT;
     // ret.number = malloc(15 * sizeof(unsigned long long));
 

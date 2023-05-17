@@ -13,8 +13,7 @@ void bn_init(bn **num)
 
 void bn_set_bn(bn *dst, bn *src)
 {
-    if (dst->number)
-        kfree(dst->number);
+    kfree(dst->number);
     dst->number = src->number;
     dst->size = src->size;
     dst->capacity = src->capacity;
@@ -22,8 +21,7 @@ void bn_set_bn(bn *dst, bn *src)
 
 void bn_copy(bn *dst, bn *src)
 {
-    if (dst->number)
-        kfree(dst->number);
+    kfree(dst->number);
 
     dst->number =
         kmalloc(src->capacity * sizeof(unsigned long long), GFP_KERNEL);
@@ -43,8 +41,7 @@ void bn_init_u64(bn **num, unsigned long long ui)
 
 void bn_free(bn *num)
 {
-    if (num->number)
-        kfree(num->number);
+    kfree(num->number);
     kfree(num);
 }
 
@@ -150,8 +147,8 @@ void bn_lshift(bn *out, bn *num)
     bn tmp = BN_INIT;
     bn_copy(&tmp, num);
 
-    if (num->number[num->capacity - 1] & (1UL << 63)) {
-        bn_extend(num);
+    if (tmp.number[tmp.capacity - 1] & (1UL << 63)) {
+        bn_extend(&tmp);
     }
 
     int tail = 0, head;
