@@ -27,7 +27,10 @@ static dev_t fib_dev = 0;
 static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
-static ktime_t kt;
+static ktime_t start_time, end_time;
+static s64 elapsed_ns;
+static void (*fib_func)(unsigned long long, char *);
+
 
 static long long fib_sequence(long long k)
 {
@@ -150,13 +153,14 @@ end:
     bn_free(fib_2n1);
 }
 
-static long long fib_time_proxy(long long k)
+static long long fib_time_proxy(unsigned long long k, char *buf)
 {
-    kt = ktime_get();
-    long long res = fib_sequence(k);
-    kt = ktime_sub(ktime_get(), kt);
+    start_time = ktime_get();
+    bn_fast_doubling(k, buf);
+    end_time = ktime_get();
+    elapsed_ns = ktime_to_ns(ktime_sub(end_time, start_time));
 
-    return res;
+    return (long long) elapsed_ns;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
@@ -180,9 +184,7 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    // bn_fast_doubling(*offset, buf);
-    bn_fast_doubling(*offset, buf);
-    return 1;
+    return fib_time_proxy(*offset, buf);
 }
 
 /* write operation is skipped */

@@ -11,7 +11,7 @@
 int main()
 {
     char buf[100000];
-    long long sz;
+    long long time_ns;
     int offset = 10000; /* TODO: try test something bigger than the limit */
     // bn ret = BN_INIT;
     // ret.number = malloc(15 * sizeof(unsigned long long));
@@ -23,12 +23,9 @@ int main()
     }
 
     lseek(fd, offset, SEEK_SET);
-    sz = read(fd, buf, sizeof(buf));
-    if (sz == 0) {
-        printf("read from module error\n");
-        return 1;
-    }
-    printf("%s\n", buf);
+    time_ns = read(fd, buf, sizeof(buf));
+    printf("%.2f\n", time_ns * 1e-6);
+    // printf("%s\n", buf);
 
 
     close(fd);
