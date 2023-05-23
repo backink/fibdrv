@@ -29,3 +29,8 @@ dkms.conf
 # test-oriented
 client
 out
+client_multhds
+
+# time analysis data
+dp_data/
+fd_data/

@@ -156,7 +156,7 @@ end:
 static long long fib_time_proxy(unsigned long long k, char *buf)
 {
     start_time = ktime_get();
-    bn_fast_doubling(k, buf);
+    fib_func(k, buf);
     end_time = ktime_get();
     elapsed_ns = ktime_to_ns(ktime_sub(end_time, start_time));
 
@@ -193,6 +193,16 @@ static ssize_t fib_write(struct file *file,
                          size_t size,
                          loff_t *offset)
 {
+    switch (*offset) {
+    case 0:
+        fib_func = fib_bn_dp;
+        break;
+    case 1:
+        fib_func = bn_fast_doubling;
+        break;
+    default:
+        return 0;
+    }
     return 1;
 }
 
