@@ -13,16 +13,14 @@
 typedef struct {
     int func;
     int offset;
-} thread_args;
+} thread_arg;
 
-thread_args args;
-
-void *thread_func(void *not_used)
+void *thread_func(void *arg)
 {
     char buf[100000];
-    int func = args.func;
-    int offset = args.offset;
-
+    thread_arg *args = (thread_arg *) arg;
+    int func = args->func;
+    int offset = args->offset;
 
     int fd = open(FIB_DEV, O_RDWR);
     if (fd < 0) {
@@ -46,13 +44,16 @@ void *thread_func(void *not_used)
 
 int main(int argc, char *argv[])
 {
-    args.func = atoi(argv[1]);
-    args.offset = atoi(argv[0]);
-
     pthread_t threads[THREAD_NUM];
+    thread_arg args[THREAD_NUM];
 
     for (int i = 0; i < THREAD_NUM; i++) {
-        pthread_create(&threads[i], NULL, thread_func, NULL);
+        args[i].func = atoi(argv[1]);
+        args[i].offset = atoi(argv[0]) - i;
+    }
+
+    for (int i = 0; i < THREAD_NUM; i++) {
+        pthread_create(&threads[i], NULL, thread_func, &args[i]);
     }
 
     for (int i = 0; i < THREAD_NUM; i++) {
