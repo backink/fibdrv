@@ -47,6 +47,23 @@ static long long fib_sequence(long long k)
     return f[k];
 }
 
+static long long fib_dp(long long k)
+{
+    if (k < 2)
+        return k;
+
+    long long a = 0;
+    long long b = 1;
+
+    for (int i = 2; i <= k; i++) {
+        long long tmp = a + b;
+        a = b;
+        b = tmp;
+    }
+
+    return b;
+}
+
 static long long fast_doubling_rec(long long k)
 {
     if (k < 2)

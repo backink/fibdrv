@@ -9,10 +9,6 @@ do
     filename="${i}.txt"
     touch "$filename"
 
-    for ((j = 0; j < 100; j++))
-    do
-        output=$(sudo ~/linux2023/fibdrv/client 1 "$i")
-        echo "$output" >> "$filename"
-    done
+    sudo ~/linux2023/fibdrv/client 1 "$i" >> "$filename"
 done
 

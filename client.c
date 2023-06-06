@@ -15,7 +15,6 @@ int main(int argc, char *argv[])
         return -1;
     }
     char buf[100000];
-    long long time_ns;
     int offset = atoi(argv[2]);
     int func = atoi(argv[1]);
     /* 0 -> dp, 1 -> fast_doubling */
@@ -33,8 +32,11 @@ int main(int argc, char *argv[])
     }
 
     lseek(fd, offset, SEEK_SET);
-    time_ns = read(fd, buf, sizeof(buf));
-    printf("%lld\n", time_ns);
+    for (int j = 0; j < 100; j++) {
+        long long time_ns = read(fd, buf, sizeof(buf));
+        printf("%lld\n", time_ns);
+    }
+
 
     close(fd);
     return 0;
